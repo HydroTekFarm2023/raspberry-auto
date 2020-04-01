@@ -137,23 +137,24 @@ def fill_to_top():
     
     print('PUMP FILLING UP')
     print('Initial Current Distance: {}'.format(distance_from_sensor))
-
-    while(distance_from_sensor > max_height):
-        distance_from_sensor = measure_height(3)
-        print('Current Distance: {}'.format(distance_from_sensor))
-        pump_in()
-        time.sleep(0.2)
-        
-    pump_stop()
-    time.sleep(2)
-    distance_from_sensor = measure_height(10)
-    if distance_from_sensor > max_height:
-        print('Wrong Current Distance: {}'.format(distance_from_sensor))
+    
+    completed = False
+    retry = 0
+    
+    while(not completed):
         while(distance_from_sensor > max_height):
             distance_from_sensor = measure_height(3)
             print('Current Distance: {}'.format(distance_from_sensor))
             pump_in()
             time.sleep(0.2)
+        pump_stop()
+        time.sleep(3)
+        distance_from_sensor = measure_height(10)
+        if distance_from_sensor < max_height or retry > 3:
+             completed = True
+        else:
+            retry = retry + 1
+            print('#{} Wrong Current Distance: {}'.format(retry, distance_from_sensor))
         
     pump_stop()
 
@@ -162,24 +163,24 @@ def drain_to_bottom():
 
     print('PUMP DRAINING')
     print('Initial Current Distance: {}'.format(distance_from_sensor))
-
-    while(distance_from_sensor < min_height):
-        distance_from_sensor = measure_height(3)
-        print('Current Distance: {}'.format(distance_from_sensor))
-        pump_out()
-        time.sleep(0.2)
-        
-    pump_stop()
-    time.sleep(2)
     
-    distance_from_sensor = measure_height(10)
-    if distance_from_sensor < min_height:
-        print('Wrong Current Distance: {}'.format(distance_from_sensor))
+    completed = False
+    retry = 0
+    
+    while(not completed):
         while(distance_from_sensor < min_height):
             distance_from_sensor = measure_height(3)
             print('Current Distance: {}'.format(distance_from_sensor))
             pump_out()
             time.sleep(0.2)
+        pump_stop()
+        time.sleep(3)
+        distance_from_sensor = measure_height(10)
+        if distance_from_sensor > min_height or retry > 3:
+             completed = True
+        else:
+            retry = retry + 1
+            print('#{} Wrong Current Distance: {}'.format(retry, distance_from_sensor))
         
     pump_stop()
 
