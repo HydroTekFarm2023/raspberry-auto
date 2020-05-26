@@ -1,0 +1,123 @@
+import paho.mqtt.client as mqtt 	#import the client1
+import time
+import datetime
+
+def on_message(client, userdata, message):
+	print("message received " ,str(message.payload.decode("utf-8")))
+	
+	sen_data = str(message.payload.decode("utf-8"))
+	Logfile = "/home/pi/Desktop/meghana/sd_card_data2.txt" #sd_card location
+	file = open(Logfile, "a")
+	file.write(sen_data)
+	file.close()
+
+	file = open(Logfile,"r")
+	input_text = file.readline()
+	file.close()
+
+	print("message topic=",message.topic)
+	print("message qos=",message.qos)
+	print("message retain flag=",message.retain)
+
+def temp_callback(client, userdata, message):
+	sen_data1 = str(message.payload.decode("utf-8"))
+	Logfile = "/home/pi/Desktop/meghana/sd_card_data2.txt" #sd_card location
+	file = open(Logfile, "a")
+	file.write(sen_data1)
+	file.write(" -- ")
+	file.close()
+
+	file = open(Logfile,"r")
+	input_text = file.readline()
+	file.close()
+
+		
+def humidity_callback(client, userdata, message):
+	sen_data2 = str(message.payload.decode("utf-8"))
+	Logfile = "/home/pi/Desktop/meghana/sd_card_data2.txt" #sd_card location
+	file = open(Logfile, "a")
+	file.write(sen_data2)
+	file.write(" -- ")
+	file.close()
+
+	file = open(Logfile,"r")
+	input_text = file.readline()
+	file.close()
+
+def date_now():
+	today = datetime.datetime.now().strftime("%Y-%m-%d")
+	today = str(today)
+	
+	Logfile = "/home/pi/Desktop/meghana/sd_card_data2.txt" #sd_card location
+	file = open(Logfile, "a")
+	file.write(today)
+	file.write("\n")
+	file.close()
+
+	file = open(Logfile,"r")
+	input_text = file.readline()
+	file.close()
+
+def time_now():
+	now = datetime.datetime.now().strftime("%H:%M:%S")
+	now = str(now)
+
+	Logfile = "/home/pi/Desktop/meghana/sd_card_data2.txt" #sd_card location
+	file = open(Logfile, "a")
+	file.write(now)
+	file.write("\n")
+	file.close()
+
+	file = open(Logfile,"r")
+	input_text = file.readline()
+	file.close()
+
+def on_connect(client, userdata, flags, rc):
+	if rc==0:
+		print("Connected with result code "+str(rc))
+	else:
+		print("Not connected")
+
+def on_log(client, userdata, level, buf):
+   	print("log: ",buf)
+
+def on_disconnect(client, userdata, flags, rc=0):
+	print("Disconnected with result code "+str(rc))
+	
+date_now()
+time_now()
+broker="192.168.1.16"
+port="1883"
+
+print("creating new instance")
+
+client = mqtt.Client("P1") 	#create new instance
+
+
+
+client.on_message=on_message #attach function to callback
+client.on_connect=on_connect
+client.on_disconnect=on_disconnect
+client.on_log=on_log
+
+print("connecting to broker",broker)
+
+client.connect(broker) #connect to broker
+client.loop_start() #start the loop
+
+print("Subscribing to topic","esp32/branch1/")
+client.subscribe("esp32/branch1/#")
+
+client.message_callback_add("esp32/branch1/temp", temp_callback)
+client.message_callback_add("esp32/branch1/humidity", humidity_callback)
+
+
+print("Publishing message to topic","esp32/branch1/temp")
+client.publish("esp32/branch1/temp","off")
+
+print("Publishing message to topic","esp32/branch1/humidity")
+client.publish("esp32/branch1/humidity","on")
+
+time.sleep(4) # wait
+client.loop_stop() #stop the loop
+client.disconnect()
