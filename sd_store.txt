@@ -1,0 +1,4 @@
+To store to sd card:
+
+1. Run on terminal :lsblk -p
+2. Run on terminal :sudo dd bs=4M if=/home/pi/Desktop/meghana/sd_card_data10.txt of=/dev/mmcblk0 conv=fsync
