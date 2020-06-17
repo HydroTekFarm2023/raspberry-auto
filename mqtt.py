@@ -4,15 +4,15 @@ import os
 from mongo import Mongo
 
 
-MQTT_BROKER = "192.168.1.13"
+MQTT_BROKER = "192.168.1.18"
 MQTT_PORT = 1883
-MQTT_KEEPALIVE = 60
-MQTT_QOS = 2
+#MQTT_KEEPALIVE = 60
+MQTT_QOS = 0
 MQTT_TOPICS = ("#",)  # Array of topics to subscribe; '#' subscribe to ALL available topics
 
 MQTT_BROKER = os.getenv("MQTT_BROKER", MQTT_BROKER)
 MQTT_PORT = os.getenv("MQTT_PORT", MQTT_PORT)
-MQTT_KEEPALIVE = os.getenv("MQTT_KEEPALIVE", MQTT_KEEPALIVE)
+# MQTT_KEEPALIVE = os.getenv("MQTT_KEEPALIVE", MQTT_KEEPALIVE)
 MQTT_QOS = os.getenv("MQTT_QOS", MQTT_QOS)
 MQTT_TOPICS = os.getenv("MQTT_TOPICS", MQTT_TOPICS)  # As ENV, comma separated
 if isinstance(MQTT_TOPICS, str):
@@ -36,13 +36,13 @@ class MQTT(object):
     # noinspection PyUnusedLocal
     def on_message(self, client: mqtt.Client, userdata, msg: mqtt.MQTTMessage):
         print("Rx MQTT")
-        print("Data Recieved: ",msg.payload.decode())
-        print("Topic: ",msg.topic)
+        print("Data Recieved:",msg.payload.decode())
+        print("Topic:",msg.topic)
         self.mongo.save(msg)
 
     def run(self):
         print("Running MQTT")
-        self.mqtt_client.connect(MQTT_BROKER, MQTT_PORT, MQTT_KEEPALIVE)
+        self.mqtt_client.connect(MQTT_BROKER, MQTT_PORT)
         self.mqtt_client.loop_start()
 
     def stop(self):
