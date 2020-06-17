@@ -9,16 +9,16 @@ import threading
 import os
 
 
-MONGO_URI = "mongodb://192.168.1.13:1883"  # mongodb://user:pass@ip:port || mongodb://ip:port
+MONGO_URI = "mongodb://0.0.0.0:27017"  # mongodb://user:pass@ip:port || mongodb://ip:port
 MONGO_DB = "hydroponics"
-MONGO_COLLECTION = "sensors"
-MONGO_TIMEOUT = 20  # Time in seconds
+MONGO_COLLECTION = "sensor_data"
+#MONGO_TIMEOUT = 20  # Time in seconds
 MONGO_DATETIME_FORMAT = "%d/%m/%Y %H:%M:%S"
 
 MONGO_URI = os.getenv("MONGO_URI", MONGO_URI)
 MONGO_DB = os.getenv("MONGO_DB", MONGO_DB)
 MONGO_COLLECTION = os.getenv("MONGO_COLLECTION", MONGO_COLLECTION)
-MONGO_TIMEOUT = float(os.getenv("MONGO_TIMEOUT", MONGO_TIMEOUT))
+#MONGO_TIMEOUT = float(os.getenv("MONGO_TIMEOUT", MONGO_TIMEOUT))
 MONGO_DATETIME_FORMAT = os.getenv("MONGO_DATETIME_FORMAT", MONGO_DATETIME_FORMAT)
 
 
@@ -30,10 +30,12 @@ class Mongo(object):
         self.queue: List[mqtt.MQTTMessage] = list()
 
     def connect(self):
-        print("Connecting Mongo")
-        self.client = pymongo.MongoClient(MONGO_URI, serverSelectionTimeoutMS=MONGO_TIMEOUT*1000.0)
+        
+        self.client = pymongo.MongoClient(MONGO_URI)
         self.database = self.client.get_database(MONGO_DB)
         self.collection = self.database.get_collection(MONGO_COLLECTION)
+        print(self.collection)
+        print("Connecting Mongo")
         
     def disconnect(self):
         print("Disconnecting Mongo")
@@ -70,9 +72,11 @@ class Mongo(object):
                 # TODO datetime must be fetched right when the message is received
                 # It will be wrong when a queued message is stored
                 }
-            print("Storing")
+            
             result = self.collection.insert_one(document)
+            print("Stored")
             print("Saved in Mongo document ID", result.inserted_id)
+            
             if not result.acknowledged:
                 # Enqueue message if it was not saved properly
                 self._enqueue(msg)
@@ -80,6 +84,7 @@ class Mongo(object):
             print(ex)
 
     def _store(self, msg):
+        print("storing")
         th = threading.Thread(target=self.__store_thread_f, args=(msg,))
         th.daemon = True
         th.start()
