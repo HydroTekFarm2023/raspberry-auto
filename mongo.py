@@ -7,11 +7,12 @@ import pymongo.collection
 import pymongo.errors
 import threading
 import os
+import json
 
 
 MONGO_URI = "mongodb://0.0.0.0:27017"  # mongodb://user:pass@ip:port || mongodb://ip:port
-MONGO_DB = "hydroponics"
-MONGO_COLLECTION = "sensor_data"
+MONGO_DB = "hydro"
+MONGO_COLLECTION = "sen_data"
 #MONGO_TIMEOUT = 20  # Time in seconds
 MONGO_DATETIME_FORMAT = "%d/%m/%Y %H:%M:%S"
 
@@ -34,11 +35,11 @@ class Mongo(object):
         self.client = pymongo.MongoClient(MONGO_URI)
         self.database = self.client.get_database(MONGO_DB)
         self.collection = self.database.get_collection(MONGO_COLLECTION)
-        print(self.collection)
-        print("Connecting Mongo")
+        #print(self.collection)
+        #print("Connecting Mongo")
         
     def disconnect(self):
-        print("Disconnecting Mongo")
+        #print("Disconnecting Mongo")
         if self.client:
             self.client.close()
             self.client = None
@@ -54,28 +55,33 @@ class Mongo(object):
             return True
 
     def _enqueue(self, msg: mqtt.MQTTMessage):
-        print("Enqueuing")
+        #print("Enqueuing")
         self.queue.append(msg)
         # TODO process queue
 
     def __store_thread_f(self, msg: mqtt.MQTTMessage):
-        
+        seg=msg.topic.split('/')
         now = datetime.now()
         try:
-            document = {
-                "topic": msg.topic,
-                "payload": msg.payload.decode(),
+            
+            D2=eval(msg.payload.decode())
+            #print(D2)
+           
+            #doc=json.dumps(msg.payload.decode())
+            #document = D2
+                #"topic": msg.topic,
+                
                 # "retained": msg.retain,
-                "qos": msg.qos,
-                "timestamp": int(now.timestamp()),
-                "datetime": now.strftime(MONGO_DATETIME_FORMAT),
+                #"qos": msg.qos,
+                #"timestamp": int(now.timestamp()),
+                #"datetime": now.strftime(MONGO_DATETIME_FORMAT),
                 # TODO datetime must be fetched right when the message is received
                 # It will be wrong when a queued message is stored
-                }
+                
             
-            result = self.collection.insert_one(document)
-            print("Stored")
-            print("Saved in Mongo document ID", result.inserted_id)
+            result = self.collection.insert_one(D2)
+            #print("Stored")
+            #print("Saved in Mongo document ID", result.inserted_id)
             
             if not result.acknowledged:
                 # Enqueue message if it was not saved properly
@@ -84,13 +90,13 @@ class Mongo(object):
             print(ex)
 
     def _store(self, msg):
-        print("storing")
+        #print("storing")
         th = threading.Thread(target=self.__store_thread_f, args=(msg,))
         th.daemon = True
         th.start()
 
     def save(self, msg: mqtt.MQTTMessage):
-        print("Saving")
+        #print("Saving")
         if msg.retain:
             print("Skipping retained message")
             return
@@ -98,3 +104,4 @@ class Mongo(object):
             self._store(msg)
         else:
             self._enqueue(msg)
+
