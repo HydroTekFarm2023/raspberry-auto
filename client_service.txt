@@ -1,0 +1,43 @@
+
+1. On your Pi, create a .service file for your service, for example:
+
+mqttclient_1.service
+
+2. Enter the following in the file:
+***
+[Unit]
+Description=My service
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 -u sd_code_final1.py
+WorkingDirectory=/home/pi/mqttclient_1
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=pi
+
+[Install]
+WantedBy=multi-user.target
+***
+3. Create a folder in /home/pi as mqttclient_1 and load it with sd_code_final1.py
+
+So in this instance, the service would run Python 3 from our working directory /home/pi/mqttclient_1
+which contains our python program to run sd_code_final1.py. 
+
+4. Copy this file into /etc/systemd/system as root, for example:
+***
+sudo cp myscript.service /etc/systemd/system/myscript.service
+***
+5. Once this has been copied, you can attempt to start the service using the following command:
+***
+sudo systemctl start myscript.service
+***
+Stop it using following command:
+***
+sudo systemctl stop myscript.service
+***
+6. When you are happy that this starts and stops your app, you can have it start automatically on reboot by using this command:
+***
+sudo systemctl enable myscript.service
+***
