@@ -7,12 +7,13 @@ import pymongo.collection
 import pymongo.errors
 import threading
 import os
-import json
+import time
+from signal import pause
 
 
 MONGO_URI = "mongodb://0.0.0.0:27017"  # mongodb://user:pass@ip:port || mongodb://ip:port
-MONGO_DB = "hydro"
-MONGO_COLLECTION = "sen_data"
+MONGO_DB = "buck"
+MONGO_COLLECTION = "col1"
 #MONGO_TIMEOUT = 20  # Time in seconds
 MONGO_DATETIME_FORMAT = "%d/%m/%Y %H:%M:%S"
 
@@ -61,28 +62,31 @@ class Mongo(object):
 
     def __store_thread_f(self, msg: mqtt.MQTTMessage):
         seg=msg.topic.split('/')
-        now = datetime.now()
+        
         try:
-            
+        
             D2=eval(msg.payload.decode())
-            #print(D2)
-           
-            #doc=json.dumps(msg.payload.decode())
-            #document = D2
+            
+            result = self.collection.update_one({
+                "grow_room_id": seg[0],
+                "h_system_id":seg[2],
+                "nsamples":{'$lt':3}
+                },
+                {
+                    '$push': { 
+                        "samples": D2
+                        
+                         },
+                    '$inc': { "nsamples": 1 }
+                    
+                    }, upsert=True)
                 #"topic": msg.topic,
                 
                 # "retained": msg.retain,
                 #"qos": msg.qos,
                 #"timestamp": int(now.timestamp()),
-                #"datetime": now.strftime(MONGO_DATETIME_FORMAT),
-                # TODO datetime must be fetched right when the message is received
-                # It will be wrong when a queued message is stored
-                
-            
-            result = self.collection.insert_one(D2)
+                #"datetime":
             #print("Stored")
-            #print("Saved in Mongo document ID", result.inserted_id)
-            
             if not result.acknowledged:
                 # Enqueue message if it was not saved properly
                 self._enqueue(msg)
@@ -104,4 +108,3 @@ class Mongo(object):
             self._store(msg)
         else:
             self._enqueue(msg)
-
