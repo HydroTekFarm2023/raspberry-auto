@@ -13,13 +13,15 @@ from signal import pause
 
 MONGO_URI = "mongodb://0.0.0.0:27017"  # mongodb://user:pass@ip:port || mongodb://ip:port
 MONGO_DB = "buck"
-MONGO_COLLECTION = "col1"
+MONGO_COLLECTION = "system"
+MONGO_COLLECTION1 = "grow"
 #MONGO_TIMEOUT = 20  # Time in seconds
 MONGO_DATETIME_FORMAT = "%d/%m/%Y %H:%M:%S"
 
 MONGO_URI = os.getenv("MONGO_URI", MONGO_URI)
 MONGO_DB = os.getenv("MONGO_DB", MONGO_DB)
 MONGO_COLLECTION = os.getenv("MONGO_COLLECTION", MONGO_COLLECTION)
+MONGO_COLLECTION1 = os.getenv("MONGO_COLLECTION1", MONGO_COLLECTION1)
 #MONGO_TIMEOUT = float(os.getenv("MONGO_TIMEOUT", MONGO_TIMEOUT))
 MONGO_DATETIME_FORMAT = os.getenv("MONGO_DATETIME_FORMAT", MONGO_DATETIME_FORMAT)
 
@@ -29,6 +31,7 @@ class Mongo(object):
         self.client: pymongo.MongoClient = None
         self.database: pymongo.database.Database = None
         self.collection: pymongo.collection.Collection = None
+        self.collection1: pymongo.collection1.Collection = None
         self.queue: List[mqtt.MQTTMessage] = list()
 
     def connect(self):
@@ -36,6 +39,7 @@ class Mongo(object):
         self.client = pymongo.MongoClient(MONGO_URI)
         self.database = self.client.get_database(MONGO_DB)
         self.collection = self.database.get_collection(MONGO_COLLECTION)
+        self.collection1 = self.database.get_collection(MONGO_COLLECTION1)
         #print(self.collection)
         #print("Connecting Mongo")
         
@@ -62,36 +66,56 @@ class Mongo(object):
 
     def __store_thread_f(self, msg: mqtt.MQTTMessage):
         seg=msg.topic.split('/')
+        segcnt=len(seg)
+        D2=eval(msg.payload.decode())
         
         try:
-        
-            D2=eval(msg.payload.decode())
-            
-            result = self.collection.update_one({
-                "grow_room_id": seg[0],
-                "h_system_id":seg[2],
-                "nsamples":{'$lt':3}
-                },
-                {
-                    '$push': { 
-                        "samples": D2
-                        
-                         },
-                    '$inc': { "nsamples": 1 }
+            if segcnt==3:
                     
-                    }, upsert=True)
-                #"topic": msg.topic,
-                
-                # "retained": msg.retain,
-                #"qos": msg.qos,
-                #"timestamp": int(now.timestamp()),
-                #"datetime":
-            #print("Stored")
+                    
+                result = self.collection.update_one({
+                    "grow_room_id": seg[0],
+                    "h_system_id":seg[2],
+                    "nsamples":{'$lt':5}
+                    },
+                    {
+                        '$push': { 
+                            "samples": D2
+                                
+                                },
+                        '$inc': { "nsamples": 1 }
+                            
+                        }, upsert=True)
+                    
+            elif segcnt==2:
+                    
+                    
+                result = self.collection1.update_one({
+                    "grow_room_id": seg[0],
+                        
+                    "nsamples":{'$lt':5}
+                    },
+                    {
+                        '$push': { 
+                            "samples": D2
+                                
+                                },
+                        '$inc': { "nsamples": 1 }
+                            
+                        }, upsert=True)
+            else: print("Incorrect topic name. Use topic with 2 or 3 fields.")
+                        #"topic": msg.topic,
+                        
+                        # "retained": msg.retain,
+                        #"qos": msg.qos,
+                        #"timestamp": int(now.timestamp()),
+                        #"datetime":
+                    #print("Stored")
             if not result.acknowledged:
-                # Enqueue message if it was not saved properly
-                self._enqueue(msg)
+                    # Enqueue message if it was not saved properly
+                    self._enqueue(msg)
         except Exception as ex:
-            print(ex)
+                print(ex)
 
     def _store(self, msg):
         #print("storing")
