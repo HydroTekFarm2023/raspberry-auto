@@ -4,7 +4,7 @@ import os
 from mongo import Mongo
 
 
-MQTT_BROKER = "70.94.9.135"
+MQTT_BROKER = "192.168.1.18"
 MQTT_PORT = 1883
 #MQTT_KEEPALIVE = 60
 MQTT_QOS = 0
