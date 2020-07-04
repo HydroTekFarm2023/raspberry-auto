@@ -29,25 +29,21 @@ class MQTT(object):
     # noinspection PyUnusedLocal
     @staticmethod
     def on_connect(client: mqtt.Client, userdata, flags, rc):
-        #print("Connected MQTT")
         for topic in MQTT_TOPICS:
             client.subscribe(topic, MQTT_QOS)
 
     # noinspection PyUnusedLocal
     def on_message(self, client: mqtt.Client, userdata, msg: mqtt.MQTTMessage):
-        #print("Rx MQTT")
-        #print("Data Recieved:",msg.payload.decode())
-       
         print(msg.topic,":",msg.payload.decode())
         self.mongo.save(msg)
 
     def run(self):
-        #print("Running MQTT")
+        
         self.mqtt_client.connect(MQTT_BROKER, MQTT_PORT)
         self.mqtt_client.loop_start()
 
     def stop(self):
-        #print("Stopping MQTT")
+        
         self.mqtt_client.loop_stop()
         self.mqtt_client.disconnect()
 
