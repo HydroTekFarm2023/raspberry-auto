@@ -13,8 +13,8 @@ from signal import pause
 
 
 MONGO_URI = "mongodb://0.0.0.0:27017"  # mongodb://user:pass@ip:port || mongodb://ip:port
-MONGO_DB = "buck"
-MONGO_COLLECTION = "live_system_data1"
+MONGO_DB = "hydroponics"
+MONGO_COLLECTION = "live_system_data"
 MONGO_COLLECTION1 = "live_grow_room_data"
 #MONGO_TIMEOUT = 20  # Time in seconds
 MONGO_DATETIME_FORMAT = "%d/%m/%Y %H:%M:%S"
