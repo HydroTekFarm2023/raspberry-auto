@@ -1,5 +1,5 @@
 from typing import List
-from datetime import datetime
+import datetime
 import paho.mqtt.client as mqtt
 import pymongo
 import pymongo.database
@@ -11,9 +11,10 @@ import time
 from signal import pause
 
 
+
 MONGO_URI = "mongodb://0.0.0.0:27017"  # mongodb://user:pass@ip:port || mongodb://ip:port
 MONGO_DB = "buck"
-MONGO_COLLECTION = "live_system_data"
+MONGO_COLLECTION = "live_system_data1"
 MONGO_COLLECTION1 = "live_grow_room_data"
 #MONGO_TIMEOUT = 20  # Time in seconds
 MONGO_DATETIME_FORMAT = "%d/%m/%Y %H:%M:%S"
@@ -68,7 +69,10 @@ class Mongo(object):
         segcnt=len(seg)
         
         D2=eval(msg.payload.decode())
-        
+        t=D2["time"]
+        dt=t.rstrip().replace('-',' ').replace('T', ' ').replace('Z', '').replace(' ',',')
+        final=datetime.datetime.strptime(dt,'%Y,%m,%d,%H,%M,%S')
+        D2["time"]=final
         try:
             if segcnt==3:
                     
@@ -81,10 +85,10 @@ class Mongo(object):
                     {
                         '$push': { 
                             "samples": D2
-                                
+                                                           
                                 },
-                        '$set': { "last_time": D2["time"]},
-                        '$setOnInsert':{"first_time":D2["time"]},
+                        '$set': { "last_time": final},
+                        '$setOnInsert':{"first_time":final},
                         '$inc': { "nsamples": 1 }
                             
                         }, upsert=True)
@@ -102,8 +106,8 @@ class Mongo(object):
                             "samples": D2
                                 
                                 },
-                        '$set': { "last_time": D2["time"]},
-                        '$setOnInsert':{"first_time":D2["time"]},
+                        '$set': { "last_time": final},
+                        '$setOnInsert':{"first_time":final},
                         '$inc': { "nsamples": 1 }
                             
                         }, upsert=True)
