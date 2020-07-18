@@ -8,11 +8,7 @@ mqtt = MQTT(mongo)
 
 mongo.connect()
 mqtt.run()
-time.sleep(20)
-'''try:
-    pause()
-except KeyboardInterrupt:
-    pass
-'''
+time.sleep(90)
+
 mqtt.stop()
 mongo.disconnect()
