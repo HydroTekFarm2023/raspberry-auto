@@ -1,0 +1,55 @@
+INCLUDES ALL DETAILS OF PACKAGES TO BE INSTALLED
+
+KEY:
+>> : Python shell
+$  : Raspberry pi Terminal
+
+1.MQTT Broker
+	To install broker:
+	 $ sudo apt install mosquitto mosquitto-clients
+        MQTT broker service:
+	To enable:
+	 $ sudo systemctl enable mosquitto
+	To check status:
+	 $ sudo systemctl status mosquitto
+
+2.Paho-mqtt
+	>> pip install paho-mqtt
+
+3.Pymongo(v-3.4)
+	To install:
+	 $ sudo python3 -m pip install pymongo==3.4.0
+	To uninstall:
+	 $ sudo pip3 uninstall pymongo
+	To check version:
+	 >> import pymongo
+	 >> pymongo.version
+
+4.Mongodb
+	To install mongodb(v-2.4):
+	 $ sudo apt install mongodb
+	Mongodb service:
+	To enable:
+	 $ sudo systemctl enable mongodb
+	 $ sudo systemctl start mongodb
+	To check status:
+	 $ sudo systemctl status mongodb
+
+5.Docker
+	To install docker package:
+	 $ sudo apt-get update
+ 	 $ sudo apt-get install docker-ce docker-ce-cli containerd.io
+	To verify installation:
+	 $ sudo docker run hello-world
+	To uninstall:
+	 $ sudo apt-get purge docker-ce docker-ce-cli containerd.io
+	 $ sudo rm -rf /var/lib/docker
+	 $ sudo rm -rf /var/lib/containerd
+
+6.Run mongodb from docker hub:
+	To pull mongo image:
+	 $ sudo docker pull jixer/rpi-mongo
+	To run mongo image:
+	 $ sudo docker run -d -p "27017:27017" jixer/rpi-mongo
+	 $ sudo docker ps
+	 $ sudo docker exec -it *CONTAINER ID*  /bin/sh
