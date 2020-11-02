@@ -3,6 +3,7 @@ INCLUDES ALL DETAILS OF PACKAGES TO BE INSTALLED
 KEY:
 >> : Python shell
 $  : Raspberry pi Terminal
+#  : Comment
 
 1.MQTT Broker
 	To install broker:
@@ -46,10 +47,46 @@ $  : Raspberry pi Terminal
 	 $ sudo rm -rf /var/lib/docker
 	 $ sudo rm -rf /var/lib/containerd
 
-6.Run mongodb from docker hub:
+6.Run mongodb from docker engine:
 	To pull mongo image:
-	 $ sudo docker pull jixer/rpi-mongo
+	 $ sudo docker pull jixer/rpi-mongo    #jixer/rpi-mongo=image name
 	To run mongo image:
 	 $ sudo docker run -d -p "27017:27017" jixer/rpi-mongo
 	 $ sudo docker ps
 	 $ sudo docker exec -it *CONTAINER ID*  /bin/sh
+
+7.Run mosquitto broker from docker hub:
+	To pull mosquitto image:
+	 $ sudo docker pull eclipse-mosquitto
+	To run mosquitto image:
+	 $ sudo docker run -it --name mosquitto -p 1883:1883 -p 9001:9001 -d eclipse-mosquitto
+	 $ sudo docker ps
+	 $ sudo docker exec -it *CONTAINER ID*  /bin/sh
+
+8.Creating and building image:
+	To create image:
+	 #Create a new directory and store all .py files in it
+	 #Create Dockerfile in /home/pi
+	 #Create requirements.txt with all dependencies in /home/pi
+	To build image:
+	 $ sudo docker build -t myimage4 .     #myimage4==image name
+
+9.Network:
+	To create a network:
+	 $ sudo docker network create meghana  #meghana=network name
+	To check list of networks:
+	 $ sudo docker network ls
+
+10.Running myimage5 on host network:
+	To run mongo on network:
+	 $ sudo docker run -p 27017:27017 --name mongo1 -d --network meghana jixer/rpi-mongo  #mongo1=host-container name
+	To find host container IP:
+	 $ sudo docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' mongo1  #mongo1=host-container name
+	 # Replace host IP in mongo.py if change in network 
+	 # Re-build myimage 
+	To run mosquitto broker on network:
+	 $ sudo docker run -it --name mosquitto -p 1883:1883 -p 9001:9001 -d --network meghana eclipse-mosquitto    #mosquitto
+	To run myimage5 on network:
+	 $ sudo docker run --name m4 -d --network meghana myimage5   #m4==myimage5 container name
+	 $ sudo docker ps
+	 $ sudo docker exec -it *CONTAINER ID* /bin/sh
