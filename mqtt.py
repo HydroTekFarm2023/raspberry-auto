@@ -29,6 +29,7 @@ class MQTT(object):
     # noinspection PyUnusedLocal
     @staticmethod
     def on_connect(client: mqtt.Client, userdata, flags, rc):
+        print('on_connect mqtt')
         for topic in MQTT_TOPICS:
             client.subscribe(topic, MQTT_QOS)
 
@@ -38,7 +39,7 @@ class MQTT(object):
         self.mongo.save(msg)
 
     def run(self):
-        
+        print('Running mqtt')
         self.mqtt_client.connect(MQTT_BROKER, MQTT_PORT)
         self.mqtt_client.loop_start()
 
@@ -46,4 +47,5 @@ class MQTT(object):
         
         self.mqtt_client.loop_stop()
         self.mqtt_client.disconnect()
+
 
