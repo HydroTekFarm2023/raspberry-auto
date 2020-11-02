@@ -9,14 +9,14 @@ import threading
 import os
 import time
 from signal import pause
+#from pymongo import Connection
 
 
-
-MONGO_URI = "mongodb://0.0.0.0:27017"  # mongodb://user:pass@ip:port || mongodb://ip:port
+MONGO_URI = "mongodb://172.18.0.2:27017"  # mongodb://user:pass@ip:port || mongodb://ip:port
 MONGO_DB = "hydroponics"
 MONGO_COLLECTION = "live_system_data"
 MONGO_COLLECTION1 = "live_grow_room_data"
-#MONGO_TIMEOUT = 20  # Time in seconds
+#MONGO_TIMEOUT = 60  # Time in seconds
 MONGO_DATETIME_FORMAT = "%d/%m/%Y %H:%M:%S"
 
 MONGO_URI = os.getenv("MONGO_URI", MONGO_URI)
@@ -26,6 +26,8 @@ MONGO_COLLECTION1 = os.getenv("MONGO_COLLECTION1", MONGO_COLLECTION1)
 #MONGO_TIMEOUT = float(os.getenv("MONGO_TIMEOUT", MONGO_TIMEOUT))
 MONGO_DATETIME_FORMAT = os.getenv("MONGO_DATETIME_FORMAT", MONGO_DATETIME_FORMAT)
 
+#c = Connection(host=0.0.0.0, port=27017)
+#c.hydroponics
 
 class Mongo(object):
     def __init__(self):
@@ -36,7 +38,7 @@ class Mongo(object):
         self.queue: List[mqtt.MQTTMessage] = list()
 
     def connect(self):
-        
+        print('im here')
         self.client = pymongo.MongoClient(MONGO_URI)
         self.database = self.client.get_database(MONGO_DB)
         self.collection = self.database.get_collection(MONGO_COLLECTION)
@@ -50,11 +52,13 @@ class Mongo(object):
             self.client = None
 
     def connected(self) -> bool:
+        print('mongo connected')
         if not self.client:
             return False
             try:
                 self.client.admin.command("ismaster")
             except pymongo.errors.PyMongoError:
+                print('2')
                 return False
         else:
             return True
@@ -67,7 +71,7 @@ class Mongo(object):
     def __store_thread_f(self, msg: mqtt.MQTTMessage):
         seg=msg.topic.split('/')
         segcnt=len(seg)
-        
+        print('mongo store thread')
         D2=eval(msg.payload.decode())
         t=D2["time"]
         dt=t.rstrip().replace('-',' ').replace('T', ' ').replace('Z', '').replace(' ',',')
@@ -117,20 +121,22 @@ class Mongo(object):
                     # Enqueue message if it was not saved properly
                     self._enqueue(msg)
         except Exception as ex:
+                print('3')
                 print(ex)
 
     def _store(self, msg):
-        
+        print('mongo store')
         th = threading.Thread(target=self.__store_thread_f, args=(msg,))
         th.daemon = True
         th.start()
 
     def save(self, msg: mqtt.MQTTMessage):
-        
+        print('mongo save')
         if msg.retain:
             print("Skipping retained message")
             return
         if self.connected():
+            print('4')
             self._store(msg)
         else:
             self._enqueue(msg)
