@@ -7,137 +7,93 @@ import pymongo.collection
 import pymongo.errors
 import threading
 import os
-import time
-from signal import pause
-#from pymongo import Connection
 
+DEFAULT_MONGO_COLLECTION = "sensor_data"
 
-MONGO_URI = "mongodb://172.18.0.2:27017"  # mongodb://user:pass@ip:port || mongodb://ip:port
-MONGO_DB = "hydroponics"
-MONGO_COLLECTION = "live_system_data"
-MONGO_COLLECTION1 = "live_grow_room_data"
-#MONGO_TIMEOUT = 60  # Time in seconds
-MONGO_DATETIME_FORMAT = "%d/%m/%Y %H:%M:%S"
+MONGO_HOST = os.getenv("MONGO_HOST")
+MONGO_USERNAME = os.getenv("MONGO_USERNAME")
+MONGO_PWD = os.getenv("MONGO_PWD")
+MONGO_DB_NAME = os.getenv("MONGO_DB_NAME")
+MONGO_COLLECTION = os.getenv("MONGO_COLLECTION", DEFAULT_MONGO_COLLECTION)
 
-MONGO_URI = os.getenv("MONGO_URI", MONGO_URI)
-MONGO_DB = os.getenv("MONGO_DB", MONGO_DB)
-MONGO_COLLECTION = os.getenv("MONGO_COLLECTION", MONGO_COLLECTION)
-MONGO_COLLECTION1 = os.getenv("MONGO_COLLECTION1", MONGO_COLLECTION1)
-#MONGO_TIMEOUT = float(os.getenv("MONGO_TIMEOUT", MONGO_TIMEOUT))
-MONGO_DATETIME_FORMAT = os.getenv("MONGO_DATETIME_FORMAT", MONGO_DATETIME_FORMAT)
-
-#c = Connection(host=0.0.0.0, port=27017)
-#c.hydroponics
+MONGO_URI = "mongodb+srv://" + MONGO_USERNAME + ":" + MONGO_PWD + "@cluster0.x5wba.gcp.mongodb.net/" + MONGO_DB_NAME + "?retryWrites=true&w=majority"
 
 class Mongo(object):
     def __init__(self):
         self.client: pymongo.MongoClient = None
         self.database: pymongo.database.Database = None
-        self.collection: pymongo.collection.Collection = None
-        self.collection1: pymongo.collection1.Collection = None
+        self.sensorDataCollection: pymongo.collection.Collection = None
         self.queue: List[mqtt.MQTTMessage] = list()
 
     def connect(self):
-        print('im here')
+        print('connecting to database')
         self.client = pymongo.MongoClient(MONGO_URI)
-        self.database = self.client.get_database(MONGO_DB)
-        self.collection = self.database.get_collection(MONGO_COLLECTION)
-        self.collection1 = self.database.get_collection(MONGO_COLLECTION1)
+        self.database = self.client.get_database(MONGO_DB_NAME)
+        self.sensorDataCollection = self.database.get_collection(MONGO_COLLECTION)
         
         
     def disconnect(self):
-        
         if self.client:
             self.client.close()
             self.client = None
 
     def connected(self) -> bool:
-        print('mongo connected')
-        if not self.client:
-            return False
-            try:
-                self.client.admin.command("ismaster")
-            except pymongo.errors.PyMongoError:
-                print('2')
-                return False
-        else:
+        if self.client:
             return True
+        else:
+            print("Not Connected To Mongo")
+            return False
 
     def _enqueue(self, msg: mqtt.MQTTMessage):
-        
         self.queue.append(msg)
-        
 
     def __store_thread_f(self, msg: mqtt.MQTTMessage):
-        seg=msg.topic.split('/')
-        segcnt=len(seg)
-        print('mongo store thread')
-        D2=eval(msg.payload.decode())
-        t=D2["time"]
-        dt=t.rstrip().replace('-',' ').replace('T', ' ').replace('Z', '').replace(' ',',')
-        final=datetime.datetime.strptime(dt,'%Y,%m,%d,%H,%M,%S')
-        D2["time"]=final
+        topicParams = msg.topic.split('/')
+        sample = eval(msg.payload.decode())
+
+        # Incoming Time Stamp Format: 2020-07-07T19-01-59Z
+        # Format Time Stamp to remove Letters and Commas
+        tempTimeStamp = sample["time"].rstrip().replace('-',' ').replace('T', ' ').replace('Z', '').replace(' ',',')
+        sample["time"] = datetime.datetime.strptime(tempTimeStamp,'%Y,%m,%d,%H,%M,%S')
+
         try:
-            if segcnt==3:
-                    
-                    
-                result = self.collection.update_one({
-                    "grow_room_id": seg[0],
-                    "system_id":seg[2],
-                    "nsamples":{'$lt':5}
+            if len(topicParams) == 2:
+                result = self.sensorDataCollection.update_one(
+                    {
+                        "topicID": topicParams[1],
+                        "nsamples":{'$lt':5}
                     },
                     {
                         '$push': { 
-                            "samples": D2
-                                                           
-                                },
-                        '$set': { "last_time": final},
-                        '$setOnInsert':{"first_time":final},
+                            "samples": sample                        
+                        },
+                        '$set': { "last_time": sample["time"] },
+                        '$setOnInsert': { "first_time" : sample["time"] },
                         '$inc': { "nsamples": 1 }
-                            
-                        }, upsert=True)
-                    
-            elif segcnt==2:
-                    
-                    
-                result = self.collection1.update_one({
-                    "grow_room_id": seg[0],
-                        
-                    "nsamples":{'$lt':5}
-                    },
-                    {
-                        '$push': { 
-                            "samples": D2
-                                
-                                },
-                        '$set': { "last_time": final},
-                        '$setOnInsert':{"first_time":final},
-                        '$inc': { "nsamples": 1 }
-                            
-                        }, upsert=True)
-            else: print("Incorrect topic name. Use topic with 2 or 3 fields.")
-                        
-            if not result.acknowledged:
-                    # Enqueue message if it was not saved properly
+                    }, 
+                    upsert = True)
+
+                # Enqueue message if it was not saved properly
+                if not result.acknowledged:
                     self._enqueue(msg)
+
+            else: print("Incorrect topic name. Use topic with 2 or 3 fields.")
+
         except Exception as ex:
-                print('3')
                 print(ex)
 
     def _store(self, msg):
-        print('mongo store')
         th = threading.Thread(target=self.__store_thread_f, args=(msg,))
         th.daemon = True
         th.start()
 
     def save(self, msg: mqtt.MQTTMessage):
-        print('mongo save')
         if msg.retain:
             print("Skipping retained message")
             return
         if self.connected():
-            print('4')
             self._store(msg)
         else:
+            print("Queing Message")
             self._enqueue(msg)
 
