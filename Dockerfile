@@ -6,6 +6,6 @@ COPY requirements.txt .
 
 RUN pip3 install -r requirements.txt
 
-COPY mydocker/main/ .
+COPY . .
 
-CMD [ "python3", "./_main_.py" ]
+CMD [ "python3", "-u", "./_main_.py" ]

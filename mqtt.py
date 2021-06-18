@@ -3,18 +3,18 @@ import paho.mqtt.client as mqtt
 import os
 
 MQTT_CLIENT_NAME = "pythonClient"
+MQTT_BROKER = "localhost"
 MQTT_PORT = 1883
 MQTT_KEEPALIVE = 60
 MQTT_QOS = 1
 
-MQTT_QOS = os.getenv("MQTT_CLIENT_NAME", MQTT_CLIENT_NAME)
-MQTT_BROKER = os.getenv("MQTT_BROKER")
+MQTT_CLIENT_NAME = os.getenv("MQTT_CLIENT_NAME", MQTT_CLIENT_NAME)
+MQTT_BROKER = os.getenv("MQTT_BROKER", MQTT_BROKER)
 MQTT_PORT = os.getenv("MQTT_PORT", MQTT_PORT)
 MQTT_KEEPALIVE = os.getenv("MQTT_KEEPALIVE", MQTT_KEEPALIVE)
 MQTT_QOS = os.getenv("MQTT_QOS", MQTT_QOS)
-MQTT_TOPIC_ID = os.getenv("MQTT_TOPIC_ID")
 
-MQTT_TOPICS = ("live_data/" + MQTT_TOPIC_ID)  # Array of topics to subscribe; '#' subscribe to ALL available topics
+MQTT_TOPICS = ("live_data/#")  # Array of topics to subscribe; '#' subscribe to ALL available topics
 
 class MQTT(object):
     def __init__(self, mongo: Mongo):
@@ -26,7 +26,7 @@ class MQTT(object):
     # noinspection PyUnusedLocal
     @staticmethod
     def on_connect(client: mqtt.Client, userdata, flags, rc):
-        print('Connected to Broker: ' + MQTT_BROKER + ":" + MQTT_PORT)
+        print('Connected to Broker: ' + MQTT_BROKER + ":" + str(MQTT_PORT))
         for topic in MQTT_TOPICS:
             client.subscribe(topic, MQTT_QOS)
 
@@ -35,7 +35,7 @@ class MQTT(object):
         self.mongo.save(msg)
 
     def run(self):
-        print('Conencting to Broker at:', MQTT_BROKER + ":" + MQTT_PORT)
+        print('Conencting to Broker at:', MQTT_BROKER + ":" + str(MQTT_PORT))
         self.mqtt_client.connect(MQTT_BROKER, MQTT_PORT)
         self.mqtt_client.loop_start()
 

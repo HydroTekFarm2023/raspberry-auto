@@ -16,6 +16,8 @@ MONGO_PWD = os.getenv("MONGO_PWD")
 MONGO_DB_NAME = os.getenv("MONGO_DB_NAME")
 MONGO_COLLECTION = os.getenv("MONGO_COLLECTION", DEFAULT_MONGO_COLLECTION)
 
+print(MONGO_HOST, MONGO_USERNAME, MONGO_PWD, MONGO_DB_NAME, MONGO_COLLECTION)
+
 MONGO_URI = "mongodb+srv://" + MONGO_USERNAME + ":" + MONGO_PWD + "@cluster0.x5wba.gcp.mongodb.net/" + MONGO_DB_NAME + "?retryWrites=true&w=majority"
 
 class Mongo(object):
@@ -53,7 +55,7 @@ class Mongo(object):
 
         # Incoming Time Stamp Format: 2020-07-07T19-01-59Z
         # Format Time Stamp to remove Letters and Commas
-        tempTimeStamp = sample["time"].rstrip().replace('-',' ').replace('T', ' ').replace('Z', '').replace(' ',',')
+        tempTimeStamp = sample["time"].rstrip().replace('-',' ').replace(':', ' ').replace('T', ' ').replace('Z', '').replace(' ',',')
         sample["time"] = datetime.datetime.strptime(tempTimeStamp,'%Y,%m,%d,%H,%M,%S')
 
         try:
